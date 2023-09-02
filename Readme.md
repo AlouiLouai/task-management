@@ -22,7 +22,7 @@ npm start
 - `PUT /api/users/:id`: Update user details by ID.
 - `DELETE /api/users/:id`: Delete a user by ID.
 
-#### Environment Variables
+# Environment Variables
 
 - `PORT`: The port number on which the server will run. Default is `3000`.
 - `MONGO_URL`: The MongoDB connection string.
