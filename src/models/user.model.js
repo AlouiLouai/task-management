@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
-const { mongooseToJson } = require("../utils/index");
+const { MongooseToJson } = require("../utils");
 
 const userSchema = new mongoose.Schema(
   {
@@ -57,7 +57,7 @@ const userSchema = new mongoose.Schema(
 );
 
 // add plugin that converts mongoose to json
-userSchema.plugin(mongooseToJson);
+userSchema.plugin(MongooseToJson);
 
 /**
  * Check if email is taken
@@ -68,6 +68,24 @@ userSchema.plugin(mongooseToJson);
 userSchema.statics.isEmailTaken = async function (email, excludeUserId) {
   const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
   return !!user;
+};
+
+/**
+ * 
+ * @param {page} page page number 
+ * @param {pageSize} pageSize page size  
+ * @returns 
+ */
+userSchema.statics.paginate = async function (page, pageSize) {
+  const skip = (page - 1) * pageSize;
+  const totalUsers = await this.countDocuments();
+  const users = await this.find().skip(skip).limit(pageSize);
+  return {
+    page,
+    pageSize,
+    totalUsers,
+    users,
+  };
 };
 
 /**
