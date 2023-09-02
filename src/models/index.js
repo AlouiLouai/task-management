@@ -1,15 +1,9 @@
-const dbConfig = require("../config/database");
-const tasks = require("./task.model");
-const users = require("./user.model");
+const Token = require("./token.model");
+const User = require("./user.model");
+const Task = require("./task.model");
 
-const mongoose = require("mongoose");
-mongoose.Promise = global.Promise;
-
-const db = {};
-db.mongoose = mongoose;
-db.url = dbConfig.url;
-
-db.users = users;
-db.tasks = tasks;
-
-module.exports = db;
+module.exports = {
+  Token,
+  User,
+  Task,
+};
