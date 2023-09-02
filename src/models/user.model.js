@@ -1,25 +1,96 @@
 const mongoose = require("mongoose");
+const validator = require("validator");
 const bcrypt = require("bcrypt");
+const { mongooseToJson } = require("../utils/index");
 
-const userSchema = new mongoose.Schema({
-  username: { type: String, required: true },
-  email: { type: String, required: true },
-  hashedPassword: { type: String, required: true },
-  createdTasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task"}]
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+      validate(value) {
+        if (!validator.isEmail(value)) {
+          throw new Error("Invalid email");
+        }
+      },
+    },
+    password: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 4,
+      validate(value) {
+        if (!value.match(/\d/) || !value.match(/[a-zA-Z]/)) {
+          throw new Error(
+            "Password must contain at least one letter and on number"
+          );
+        }
+      },
+    },
+    role: {
+      type: String,
+      enum: ["admin", "user"],
+      default: "user",
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    createdTasks: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Task",
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// add plugin that converts mongoose to json
+userSchema.plugin(mongooseToJson);
+
+/**
+ * Check if email is taken
+ * @param {string} email - The user's email
+ * @param {ObjectId} [excludeUserId] - The id of the user to be excluded
+ * @returns {Promise<boolean>}
+ */
+userSchema.statics.isEmailTaken = async function (email, excludeUserId) {
+  const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
+  return !!user;
+};
+
+/**
+ * Check if password matches the user's password
+ * @param {string} password
+ * @returns {Promise<boolean>}
+ */
+userSchema.methods.isPasswordMatch = async function (password) {
+  const user = this;
+  return bcrypt.compare(password, user.password);
+};
+
+userSchema.pre("save", async function (next) {
+  const user = this;
+  if (user.isModified("password")) {
+    user.password = await bcrypt.hash(user.password, 8);
+  }
+  next();
 });
 
-// This function will be used to hash the password before saving the user
-userSchema.pre('save', async function (next) {
-    if (!this.isModified('hashedPassword')) return next();
-  
-    try {
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(this.hashedPassword, salt);
-      this.hashedPassword = hashedPassword;
-      return next();
-    } catch (error) {
-      return next(error);
-    }
-  });
+/**
+ * @typedef User
+ */
+const User = mongoose.model("User", userSchema);
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = User;
