@@ -3,7 +3,6 @@ const { ApiError, CatchAsync } = require("../utils");
 const { UserService } = require("../services");
 
 const createUser = CatchAsync(async (req, res) => {
-  console.log(req.body);
   const user = await UserService.createUser(req.body);
   res.status(httpStatus.CREATED).send(user);
 });
@@ -11,8 +10,6 @@ const createUser = CatchAsync(async (req, res) => {
 const getUsers = CatchAsync(async (req, res) => {
   const page = parseInt(req.query.page);
   const pageSize = parseInt(req.query.pageSize);
-  console.log('page :', page);
-  console.log('pageSize :', pageSize);
   const result = await UserService.queryUsers(page, pageSize);
   res.send(result);
 });

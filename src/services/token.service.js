@@ -15,14 +15,23 @@ const { tokenTypes } = require("../config/tokens");
  * @param {string} [secret]
  * @returns {string}
  */
-const generateToken = (userId, expires, type, secret = config.jwt.secret) => {
-  const payload = {
-    sub: userId,
-    iat: moment().unix(),
-    exp: expires.unix(),
-    type,
-  };
-  return jwt.sign(payload, secret);
+const generateToken = async (
+  userId,
+  expires,
+  type,
+  secret = config.jwt.secret
+) => {
+  try {
+    const payload = {
+      sub: userId,
+      iat: moment().unix(),
+      exp: expires.unix(),
+      type,
+    };
+    return jwt.sign(payload, secret);
+  } catch (error) {
+    throw new Error(error);
+  }
 };
 
 /**
@@ -75,7 +84,7 @@ const generateAuthTokens = async (user) => {
     config.jwt.accessExpirationMinutes,
     "minutes"
   );
-  const accessToken = generateToken(
+  const accessToken = await generateToken(
     user.id,
     accessTokenExpires,
     tokenTypes.ACCESS
@@ -85,7 +94,7 @@ const generateAuthTokens = async (user) => {
     config.jwt.refreshExpirationDays,
     "days"
   );
-  const refreshToken = generateToken(
+  const refreshToken = await generateToken(
     user.id,
     refreshTokenExpires,
     tokenTypes.REFRESH
@@ -143,12 +152,11 @@ const generateResetPasswordToken = async (email) => {
  * @returns {Promise<string>}
  */
 const generateVerifyEmailToken = async (user) => {
-  console.log("here is the user", user);
   const expires = moment().add(
     config.jwt.verifyEmailExpirationMinutes,
     "minutes"
   );
-  const verifyEmailToken = generateToken(
+  const verifyEmailToken = await generateToken(
     user.id,
     expires,
     tokenTypes.VERIFY_EMAIL
